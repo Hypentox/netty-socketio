@@ -15,11 +15,15 @@
  */
 package com.corundumstudio.socketio.listener;
 
+import com.corundumstudio.socketio.EventInterceptor;
+
 public interface ClientListeners {
 
     void addMultiTypeEventListener(String eventName, MultiTypeEventListener listener, Class<?> ... eventClass);
 
     <T> void addEventListener(String eventName, Class<T> eventClass, DataListener<T> listener);
+
+    <T> void addEventInterceptor(EventInterceptor<T> interceptor);
 
     void addDisconnectListener(DisconnectListener listener);
 

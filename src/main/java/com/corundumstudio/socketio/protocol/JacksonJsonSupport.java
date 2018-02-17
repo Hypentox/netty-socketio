@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -157,7 +158,7 @@ public class JacksonJsonSupport implements JsonSupport {
         private static final long serialVersionUID = 8178797221017768689L;
 
         final Map<EventKey, List<Class<?>>> eventMapping = PlatformDependent.newConcurrentHashMap();
-
+        final AtomicBoolean hasInterceptor = new AtomicBoolean(false);
 
         protected EventDeserializer() {
             super(Event.class);
@@ -170,16 +171,32 @@ public class JacksonJsonSupport implements JsonSupport {
             String eventName = jp.nextTextValue();
 
             EventKey ek = new EventKey(namespaceClass.get(), eventName);
-            if (!eventMapping.containsKey(ek)) {
+            if (!eventMapping.containsKey(ek) && !hasInterceptor.get()) {
                 ek = new EventKey(Namespace.DEFAULT_NAME, eventName);
                 if (!eventMapping.containsKey(ek)) {
                     return new Event(eventName, Collections.emptyList());
                 }
             }
 
+            List<Class<?>> eventClasses;
+
+            if (!eventMapping.containsKey(ek)) {
+                ek = new EventKey(Namespace.DEFAULT_NAME, eventName);
+                if (!eventMapping.containsKey(ek) && !hasInterceptor.get()) {
+                    return new Event(eventName, Collections.emptyList());
+                }
+            }
+
+            if (!eventMapping.containsKey(ek) && hasInterceptor.get()) {
+                eventClasses = new ArrayList<Class<?>>();
+                eventClasses.add(Object.class);
+            } else {
+                eventClasses = eventMapping.get(ek);
+            }
+
             List<Object> eventArgs = new ArrayList<Object>();
             Event event = new Event(eventName, eventArgs);
-            List<Class<?>> eventClasses = eventMapping.get(ek);
+
             int i = 0;
             while (true) {
                 JsonToken token = jp.nextToken();
@@ -332,6 +349,16 @@ public class JacksonJsonSupport implements JsonSupport {
     @Override
     public void removeEventMapping(String namespaceName, String eventName) {
         eventDeserializer.eventMapping.remove(new EventKey(namespaceName, eventName));
+    }
+
+    @Override
+    public void addInterceptorMapping() {
+        eventDeserializer.hasInterceptor.set(true);
+    }
+
+    @Override
+    public void removeInterceptorMapping() {
+        eventDeserializer.hasInterceptor.set(false);
     }
 
     @Override

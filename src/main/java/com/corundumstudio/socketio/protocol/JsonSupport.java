@@ -39,6 +39,10 @@ public interface JsonSupport {
 
     void addEventMapping(String namespaceName, String eventName, Class<?> ... eventClass);
 
+    void addInterceptorMapping();
+
+    void removeInterceptorMapping();
+
     void removeEventMapping(String namespaceName, String eventName);
 
     List<byte[]> getArrays();

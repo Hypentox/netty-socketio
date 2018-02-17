@@ -227,6 +227,11 @@ public class SocketIOServer implements ClientListeners {
         mainNamespace.addEventListener(eventName, eventClass, listener);
     }
 
+    public <T> void addEventInterceptor(EventInterceptor<T> interceptor) {
+
+        mainNamespace.addEventInterceptor(interceptor);
+    }
+
     @Override
     public void removeAllListeners(String eventName) {
         mainNamespace.removeAllListeners(eventName);

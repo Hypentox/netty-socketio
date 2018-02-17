@@ -26,13 +26,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 
-import com.corundumstudio.socketio.AckMode;
-import com.corundumstudio.socketio.AckRequest;
-import com.corundumstudio.socketio.BroadcastOperations;
-import com.corundumstudio.socketio.Configuration;
-import com.corundumstudio.socketio.MultiTypeArgs;
-import com.corundumstudio.socketio.SocketIOClient;
-import com.corundumstudio.socketio.SocketIONamespace;
+import com.corundumstudio.socketio.*;
 import com.corundumstudio.socketio.annotation.ScannerEngine;
 import com.corundumstudio.socketio.listener.*;
 import com.corundumstudio.socketio.protocol.JsonSupport;
@@ -56,6 +50,7 @@ public class Namespace implements SocketIONamespace {
 
     private final ScannerEngine engine = new ScannerEngine();
     private final ConcurrentMap<String, EventEntry<?>> eventListeners = PlatformDependent.newConcurrentHashMap();
+    private final Queue<EventInterceptor> eventInterceptors = new ConcurrentLinkedQueue<EventInterceptor>();
     private final Queue<ConnectListener> connectListeners = new ConcurrentLinkedQueue<ConnectListener>();
     private final Queue<DisconnectListener> disconnectListeners = new ConcurrentLinkedQueue<DisconnectListener>();
     private final Queue<PingListener> pingListeners = new ConcurrentLinkedQueue<PingListener>();
@@ -109,6 +104,7 @@ public class Namespace implements SocketIONamespace {
         if (entry != null) {
             jsonSupport.removeEventMapping(name, eventName);
         }
+        jsonSupport.removeInterceptorMapping();
     }
 
     @Override
@@ -129,12 +125,19 @@ public class Namespace implements SocketIONamespace {
     @SuppressWarnings({"rawtypes", "unchecked"})
     public void onEvent(NamespaceClient client, String eventName, List<Object> args, AckRequest ackRequest) {
         EventEntry entry = eventListeners.get(eventName);
+
+        Queue<DataListener> listeners;
         if (entry == null) {
-            return;
+            listeners = new ConcurrentLinkedQueue<DataListener>();
+        } else {
+            listeners = entry.getListeners();
         }
 
         try {
-            Queue<DataListener> listeners = entry.getListeners();
+
+            for (EventInterceptor interceptor : eventInterceptors) {
+                interceptor.onEvent(client, eventName, args, ackRequest);
+            }
             for (DataListener dataListener : listeners) {
                 Object data = getEventData(args, dataListener);
                 dataListener.onData(client, data, ackRequest);
@@ -166,6 +169,12 @@ public class Namespace implements SocketIONamespace {
             }
         }
         return null;
+    }
+
+    @Override
+    public <T> void addEventInterceptor(EventInterceptor<T> listener) {
+        eventInterceptors.add(listener);
+        jsonSupport.addInterceptorMapping();
     }
 
     @Override

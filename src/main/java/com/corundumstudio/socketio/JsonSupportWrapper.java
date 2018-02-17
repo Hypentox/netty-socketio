@@ -75,6 +75,16 @@ class JsonSupportWrapper implements JsonSupport {
     }
 
     @Override
+    public void addInterceptorMapping() {
+        delegate.addInterceptorMapping();
+    }
+
+    @Override
+    public void removeInterceptorMapping() {
+        delegate.removeInterceptorMapping();
+    }
+
+    @Override
     public void removeEventMapping(String namespaceName, String eventName) {
         delegate.removeEventMapping(namespaceName, eventName);
     }
