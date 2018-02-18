@@ -213,6 +213,9 @@ public class AuthorizeHandler extends ChannelInboundHandlerAdapter implements Di
         random uuid to be generated instead (same as not passing a cookie in the first place).
     */
     private UUID generateOrGetSessionIdFromRequest(HttpHeaders headers) {
+        if (this.configuration.getForceNewSessionId()) {
+            return UUID.randomUUID();
+        }
         for (String cookieHeader: headers.getAll(HttpHeaderNames.COOKIE)) {
             Set<Cookie> cookies = ServerCookieDecoder.LAX.decode(cookieHeader);
 

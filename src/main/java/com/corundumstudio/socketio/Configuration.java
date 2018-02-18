@@ -86,6 +86,8 @@ public class Configuration {
 
     private boolean websocketCompression = true;
 
+    private boolean forceNewSessionId = false;
+
     public Configuration() {
     }
 
@@ -151,6 +153,8 @@ public class Configuration {
 
         setHttpCompression(conf.isHttpCompression());
         setWebsocketCompression(conf.isWebsocketCompression());
+
+        setForceNewSessionId(conf.getForceNewSessionId());
     }
 
     public JsonSupport getJsonSupport() {
@@ -202,6 +206,19 @@ public class Configuration {
     }
     public void setWorkerThreads(int workerThreads) {
         this.workerThreads = workerThreads;
+    }
+
+    /**
+     * Generate a new session id for each connection even if the client supplies its own.
+     *
+     * @param forceNew {@code true} always generate a new session id
+     */
+    public void setForceNewSessionId(boolean forceNew) {
+        this.forceNewSessionId = forceNew;
+    }
+
+    public boolean getForceNewSessionId() {
+        return forceNewSessionId;
     }
 
     /**
